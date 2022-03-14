@@ -22,6 +22,8 @@ return new class extends Migration
             $table->timestamp("disabled_at")->nullable(true)->default(null);
             $table->string("username", 256)->nullable(false)->unique()->comment($this->username());
             $table->string("password", 60)->nullable(false)->comment($this->password());
+            $table->string("nome", 150)->nullable(false)->comment($this->nome());
+            $table->bigInteger("municipio", false, true)->nullable(false)->comment($this->municipio());
         });
     }
 
@@ -46,6 +48,30 @@ return new class extends Migration
     {
         $comment = new ColumnComment();
         $comment->formCaption = "Senha";
+        return $comment;
+    }
+
+    private function nome(): ColumnComment
+    {
+        $comment = new ColumnComment();
+        $comment->tableCaption = "Nome";
+        $comment->formCaption = "Nome completo";
+        $comment->description = null;
+        $comment->mask = null;
+        $comment->success = null;
+        $comment->error = null;
+        return $comment;
+    }
+
+    private function municipio(): ColumnComment
+    {
+        $comment = new ColumnComment();
+        $comment->tableCaption = "Município";
+        $comment->formCaption = "Nome do seu município";
+        $comment->description = null;
+        $comment->mask = null;
+        $comment->success = null;
+        $comment->error = null;
         return $comment;
     }
 };

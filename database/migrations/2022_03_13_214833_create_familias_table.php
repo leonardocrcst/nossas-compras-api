@@ -16,16 +16,12 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('participantes', function (Blueprint $table) {
+        Schema::create('familias', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
             $table->timestamp("disabled_at")->nullable(true)->default(null);
             $table->bigInteger("username", false, true)->nullable(false);
-            $table->string("referencia", 256)->nullable(false)->comment($this->referencia());
-            $table->foreign("username")->references("id")->on("usuarios");
-            $table->foreign("referencia")->references("username")->on("usuarios");
-
-            $table->unique(["username", "referencia"]);
+            $table->string("nome", 150)->nullable(false)->comment($this->nome());
         });
     }
 
@@ -36,15 +32,15 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('participantes');
+        Schema::dropIfExists('familias');
     }
 
-    private function referencia(): ColumnComment
+    private function nome(): ColumnComment
     {
         $comment = new ColumnComment();
-        $comment->tableCaption = "E-mail";
-        $comment->formCaption = "E-mail do convidado";
-        $comment->description = "E-mail do membro da família para participar da lista de compras.";
+        $comment->tableCaption = "Nome";
+        $comment->formCaption = "Nome da família";
+        $comment->description = null;
         $comment->mask = null;
         $comment->success = null;
         $comment->error = null;

@@ -24,11 +24,13 @@ return new class extends Migration
             $table->bigInteger("username", false, true)->nullable(false);
             $table->string("nome", 150)->nullable(false)->comment($this->nome());
             $table->text("endereco")->nullable(true)->comment($this->endereco());
+            $table->bigInteger("municipio", false, true)->nullable(true)->comment($this->municipio());
             $table->string("telefone", 16)->nullable(true)->comment($this->telefone());
             $table->string("website", 150)->nullable(true)->comment($this->website());
             $table->decimal("latitude", 7, 5)->nullable(true)->comment($this->latitude());
             $table->decimal("longitude", 7, 5)->nullable(true)->comment($this->longitude());
             $table->foreign("username")->references("id")->on("usuarios");
+            $table->foreign("municipio")->references("id")->on("municipios");
         });
     }
 
@@ -57,6 +59,15 @@ return new class extends Migration
         $comment->tableCaption = "Endereço";
         $comment->formCaption = "Endereço físico";
         $comment->description = "Rua, número e bairro do estabelecimento.";
+        return $comment;
+    }
+
+    private function municipio(): ColumnComment
+    {
+        $comment = new ColumnComment();
+        $comment->tableCaption = "Município";
+        $comment->formCaption = "Município";
+        $comment->description = null;
         return $comment;
     }
 

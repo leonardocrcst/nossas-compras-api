@@ -2,8 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Responses\Created;
+use App\Http\Controllers\Responses\CreateError;
+use App\Http\Controllers\Responses\Responses;
+use App\Http\Controllers\Responses\Trashed;
+use App\Http\Controllers\Responses\UnCreated;
+use App\Http\Controllers\Responses\Unknown;
+use App\Http\Controllers\Responses\UnTrashed;
+use App\Http\Controllers\Responses\UnUpdate;
+use App\Http\Controllers\Responses\Updated;
+use App\Http\Controllers\Responses\UpdateError;
+use App\Http\Resources\UsuariosResource;
 use App\Models\Usuarios;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Throwable;
 
 class UsuariosController extends MyController
@@ -11,19 +23,21 @@ class UsuariosController extends MyController
     /**
      * Display a listing of the resource.
      *
-     * @return Response
+     * @param Request $request
+     * @return AnonymousResourceCollection
      */
-    public function index(): Response
+    public function index(Request $request): AnonymousResourceCollection
     {
-
+        $data = $this->getList(new Usuarios());
+        return UsuariosResource::collection($this->setPagination($data, $request));
     }
 
     /**
      * Show the form for creating a new resource.
      *
-     * @return Response
+     * @return Responses
      */
-    public function create(): Response
+    public function create(): Responses
     {
         return parent::getCreate(new Usuarios());
     }
@@ -32,67 +46,104 @@ class UsuariosController extends MyController
      * Store a newly created resource in storage.
      *
      * @param Request $request
-     * @return Response
+     * @return Responses
      */
-    public function store(Request $request)
+    public function store(Request $request): Responses
     {
         $model = new Usuarios();
-        foreach($request->json() as $field => $value) {
-            if("password" === $field) {
-                $value = password_hash($value, CRYPT_BLOWFISH);
+        if($this->setStoreData($model, $request)) {
+            $model->password = password_hash($model->password, CRYPT_BLOWFISH);
+            try {
+                $model->saveOrFail();
+                return new Created("usuário(a)");
+            } catch (Throwable $exception) {
+                return new CreateError("usuário(a)", $exception->getCode(), ["error" => "Usuário(a) já registrado(a)."]);
             }
-            $model->$field = $value;
-        }
-        try {
-            $model->saveOrFail();
-            return new Response("Sucesso!", 201);
-        } catch (Throwable $exception) {
-            return new Response($exception->getMessage(), 500);
+        } else {
+            return new UnCreated("usuário(a)", null, $this->response);
         }
     }
 
     /**
      * Display the specified resource.
      *
-     * @param Usuarios $usuarios
-     * @return Response
+     * @param int $id
+     * @return Responses
      */
-    public function show(Usuarios $usuarios)
+    public function show(int $id): Responses
     {
-        //
+        $model = Usuarios::find($id);
+        if(!is_null($model)) {
+            return new Responses($model->get(), 200, [], "data");
+        }
+        return new Unknown("usuário");
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param Usuarios $usuarios
-     * @return Response
+     * @param int $id
+     * @return Responses
      */
-    public function edit(Usuarios $usuarios)
+    public function edit(int $id): Responses
     {
-        return $this->getCreate($usuarios);
+        $model = Usuarios::find($id);
+        if(!is_null($model)) {
+            return $this->getCreate($model);
+        }
+        return new Unknown("usuário");
     }
 
     /**
      * Update the specified resource in storage.
      *
      * @param Request $request
-     * @param Usuarios $usuarios
-     * @return Response
+     * @param int $id
+     * @return Responses
      */
-    public function update(Request $request, Usuarios $usuarios)
+    public function update(Request $request, int $id): Responses
     {
-        //
+        $model = Usuarios::find($id);
+        if(is_null($model)) {
+            return new Unknown("Usuário(a)");
+        } elseif($this->setUpdateData($model, $request)) {
+            if(!is_null($model->password)) {
+                $model->password = password_hash($model->password, CRYPT_BLOWFISH);
+            }
+            try {
+                $model->updateOrFail();
+                return new Updated("Usuário");
+            } catch (Throwable $exception) {
+                return new UpdateError("usuário", $exception->getCode(), $this->response);
+            }
+        } else {
+            return new UnUpdate("usuário");
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param Usuarios $usuarios
-     * @return Response
+     * @param int $id
+     * @return Responses
      */
-    public function destroy(Usuarios $usuarios)
+    public function destroy(int $id): Responses
     {
-        //
+        $model = Usuarios::find($id);
+        if(!is_null($model)) {
+            if (is_null($model->disabled_at)) {
+                $model->disabled_at = date('Y-m-d H:i:s');
+                $model->update();
+                return new Trashed("Usuário(a)");
+            } else {
+                try {
+                    $model->delete();
+                    return new Trashed("Usuário(a)");
+                } catch (Throwable $exception) {
+                    return new UnTrashed("usuário.");
+                }
+            }
+        }
+        return new Unknown("Usuário");
     }
 }
